@@ -13,8 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
+import { Route as AuthenticatedHistoryIndexRouteImport } from './routes/_authenticated/history.index'
+import { Route as AuthenticatedHistorySessionIdRouteImport } from './routes/_authenticated/history.$sessionId'
 import { Route as AuthenticatedInterviewSessionIdRouteImport } from './routes/_authenticated/interview.$sessionId'
 import { Route as AuthenticatedPreflightSessionIdRouteImport } from './routes/_authenticated/preflight.$sessionId'
+import { Route as AuthenticatedReportSessionIdRouteImport } from './routes/_authenticated/report.$sessionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -35,6 +38,18 @@ const AuthenticatedNewRoute = AuthenticatedNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHistoryIndexRoute =
+  AuthenticatedHistoryIndexRouteImport.update({
+    id: '/history/',
+    path: '/history/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHistorySessionIdRoute =
+  AuthenticatedHistorySessionIdRouteImport.update({
+    id: '/history/$sessionId',
+    path: '/history/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInterviewSessionIdRoute =
   AuthenticatedInterviewSessionIdRouteImport.update({
     id: '/interview/$sessionId',
@@ -47,20 +62,32 @@ const AuthenticatedPreflightSessionIdRoute =
     path: '/preflight/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReportSessionIdRoute =
+  AuthenticatedReportSessionIdRouteImport.update({
+    id: '/report/$sessionId',
+    path: '/report/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/new': typeof AuthenticatedNewRoute
+  '/history/$sessionId': typeof AuthenticatedHistorySessionIdRoute
   '/interview/$sessionId': typeof AuthenticatedInterviewSessionIdRoute
   '/preflight/$sessionId': typeof AuthenticatedPreflightSessionIdRoute
+  '/report/$sessionId': typeof AuthenticatedReportSessionIdRoute
+  '/history/': typeof AuthenticatedHistoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/new': typeof AuthenticatedNewRoute
+  '/history/$sessionId': typeof AuthenticatedHistorySessionIdRoute
   '/interview/$sessionId': typeof AuthenticatedInterviewSessionIdRoute
   '/preflight/$sessionId': typeof AuthenticatedPreflightSessionIdRoute
+  '/report/$sessionId': typeof AuthenticatedReportSessionIdRoute
+  '/history': typeof AuthenticatedHistoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,23 +95,44 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/new': typeof AuthenticatedNewRoute
+  '/_authenticated/history/$sessionId': typeof AuthenticatedHistorySessionIdRoute
   '/_authenticated/interview/$sessionId': typeof AuthenticatedInterviewSessionIdRoute
   '/_authenticated/preflight/$sessionId': typeof AuthenticatedPreflightSessionIdRoute
+  '/_authenticated/report/$sessionId': typeof AuthenticatedReportSessionIdRoute
+  '/_authenticated/history/': typeof AuthenticatedHistoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/new' | '/interview/$sessionId' | '/preflight/$sessionId'
+    | '/'
+    | '/auth'
+    | '/new'
+    | '/history/$sessionId'
+    | '/interview/$sessionId'
+    | '/preflight/$sessionId'
+    | '/report/$sessionId'
+    | '/history/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/new' | '/interview/$sessionId' | '/preflight/$sessionId'
+  to:
+    | '/'
+    | '/auth'
+    | '/new'
+    | '/history/$sessionId'
+    | '/interview/$sessionId'
+    | '/preflight/$sessionId'
+    | '/report/$sessionId'
+    | '/history'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/new'
+    | '/_authenticated/history/$sessionId'
     | '/_authenticated/interview/$sessionId'
     | '/_authenticated/preflight/$sessionId'
+    | '/_authenticated/report/$sessionId'
+    | '/_authenticated/history/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -123,6 +171,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/history/': {
+      id: '/_authenticated/history/'
+      path: '/history'
+      fullPath: '/history/'
+      preLoaderRoute: typeof AuthenticatedHistoryIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/history/$sessionId': {
+      id: '/_authenticated/history/$sessionId'
+      path: '/history/$sessionId'
+      fullPath: '/history/$sessionId'
+      preLoaderRoute: typeof AuthenticatedHistorySessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/interview/$sessionId': {
       id: '/_authenticated/interview/$sessionId'
       path: '/interview/$sessionId'
@@ -137,19 +199,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPreflightSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/report/$sessionId': {
+      id: '/_authenticated/report/$sessionId'
+      path: '/report/$sessionId'
+      fullPath: '/report/$sessionId'
+      preLoaderRoute: typeof AuthenticatedReportSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedNewRoute: typeof AuthenticatedNewRoute
+  AuthenticatedHistorySessionIdRoute: typeof AuthenticatedHistorySessionIdRoute
   AuthenticatedInterviewSessionIdRoute: typeof AuthenticatedInterviewSessionIdRoute
   AuthenticatedPreflightSessionIdRoute: typeof AuthenticatedPreflightSessionIdRoute
+  AuthenticatedReportSessionIdRoute: typeof AuthenticatedReportSessionIdRoute
+  AuthenticatedHistoryIndexRoute: typeof AuthenticatedHistoryIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNewRoute: AuthenticatedNewRoute,
+  AuthenticatedHistorySessionIdRoute: AuthenticatedHistorySessionIdRoute,
   AuthenticatedInterviewSessionIdRoute: AuthenticatedInterviewSessionIdRoute,
   AuthenticatedPreflightSessionIdRoute: AuthenticatedPreflightSessionIdRoute,
+  AuthenticatedReportSessionIdRoute: AuthenticatedReportSessionIdRoute,
+  AuthenticatedHistoryIndexRoute: AuthenticatedHistoryIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
