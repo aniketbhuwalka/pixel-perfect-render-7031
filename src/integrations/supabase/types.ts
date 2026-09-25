@@ -14,7 +14,325 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      answers: {
+        Row: {
+          answer_text: string
+          attempt_number: number
+          created_at: string
+          id: string
+          question_id: string
+          speaking_seconds: number | null
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          answer_text?: string
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          question_id: string
+          speaking_seconds?: number | null
+          user_id?: string
+          word_count?: number | null
+        }
+        Update: {
+          answer_text?: string
+          attempt_number?: number
+          created_at?: string
+          id?: string
+          question_id?: string
+          speaking_seconds?: number | null
+          user_id?: string
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback: {
+        Row: {
+          answer_id: string
+          created_at: string
+          gaps: Json
+          id: string
+          model_answer: string | null
+          score: number | null
+          strengths: Json
+        }
+        Insert: {
+          answer_id: string
+          created_at?: string
+          gaps?: Json
+          id?: string
+          model_answer?: string | null
+          score?: number | null
+          strengths?: Json
+        }
+        Update: {
+          answer_id?: string
+          created_at?: string
+          gaps?: Json
+          id?: string
+          model_answer?: string | null
+          score?: number | null
+          strengths?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_answer_id_fkey"
+            columns: ["answer_id"]
+            isOneToOne: false
+            referencedRelation: "answers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          asked_at: string | null
+          difficulty: string | null
+          id: string
+          order_index: number
+          session_id: string
+          text: string
+          type: string | null
+        }
+        Insert: {
+          asked_at?: string | null
+          difficulty?: string | null
+          id?: string
+          order_index?: number
+          session_id: string
+          text: string
+          type?: string | null
+        }
+        Update: {
+          asked_at?: string | null
+          difficulty?: string | null
+          id?: string
+          order_index?: number
+          session_id?: string
+          text?: string
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resumes: {
+        Row: {
+          created_at: string
+          extracted_text: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          extracted_text?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      session_reports: {
+        Row: {
+          communication: Json
+          created_at: string
+          id: string
+          jd_fit_summary: string | null
+          overall_score: number | null
+          session_id: string
+          strengths: Json
+          top_3_actions: Json
+          verdict_line: string | null
+          weaknesses: Json
+          what_didnt_work: Json
+          what_worked: Json
+        }
+        Insert: {
+          communication?: Json
+          created_at?: string
+          id?: string
+          jd_fit_summary?: string | null
+          overall_score?: number | null
+          session_id: string
+          strengths?: Json
+          top_3_actions?: Json
+          verdict_line?: string | null
+          weaknesses?: Json
+          what_didnt_work?: Json
+          what_worked?: Json
+        }
+        Update: {
+          communication?: Json
+          created_at?: string
+          id?: string
+          jd_fit_summary?: string | null
+          overall_score?: number | null
+          session_id?: string
+          strengths?: Json
+          top_3_actions?: Json
+          verdict_line?: string | null
+          weaknesses?: Json
+          what_didnt_work?: Json
+          what_worked?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_reports_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          candidate_first_name: string | null
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          gap_map: Json
+          id: string
+          jd_text: string
+          mode: string
+          resume_id: string | null
+          role_title: string
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          candidate_first_name?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          gap_map?: Json
+          id?: string
+          jd_text?: string
+          mode?: string
+          resume_id?: string | null
+          role_title: string
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          candidate_first_name?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          gap_map?: Json
+          id?: string
+          jd_text?: string
+          mode?: string
+          resume_id?: string | null
+          role_title?: string
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      turns: {
+        Row: {
+          ended_at: string | null
+          id: string
+          is_followup: boolean
+          question_id: string | null
+          session_id: string
+          speaker: string
+          started_at: string
+          text: string
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          is_followup?: boolean
+          question_id?: string | null
+          session_id: string
+          speaker: string
+          started_at?: string
+          text?: string
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          is_followup?: boolean
+          question_id?: string | null
+          session_id?: string
+          speaker?: string
+          started_at?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turns_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turns_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
