@@ -130,14 +130,14 @@ export const mockReport = (sessionId: string, overall = 74): ApiReport => ({
       "A guardrail metric, and what you chose not to optimise.",
       "The result. You described the negotiation but never said what shipped or how it landed.",
       "What you monitored afterwards to prove the fix held.",
-    ][i],
+    ][i] ?? "",
     model_answer: [
       "Anchor in one line: 'Four years in product analytics, last two owning payments reporting.' Then one proof point with a number, then one sentence connecting your strongest skill to this team's stated priority.",
       "Situation in one sentence, then 'I decided…' twice, then the number. Close with what you'd hand to the next owner.",
       "Name the decision the metric served, the guardrail you refused to break, and the moment the data overruled you — then the concrete reprioritisation and its result.",
       "Use the tension, your move, the agreement, and the result: 'We shipped the read-only view in five days, the full dashboard a sprint later, and it became the team's weekly review surface.'",
       "Name the failure mode precisely, the fix, the new load profile it survived, and the monitoring you added so it couldn't regress silently.",
-    ][i],
+    ][i] ?? "",
   })),
   created_at: new Date().toISOString(),
 });
