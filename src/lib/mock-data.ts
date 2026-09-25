@@ -69,7 +69,7 @@ export const mockTurns = (sessionId: string): ApiTurn[] => {
       session_id: sessionId,
       question_id: q.id,
       speaker: "candidate",
-      text: answers[i],
+      text: answers[i] ?? "",
       is_followup: false,
       started_at: new Date(base + i * 150000 + 40000).toISOString(),
     });
@@ -123,7 +123,7 @@ export const mockReport = (sessionId: string, overall = 74): ApiReport => ({
     question_id: q.id,
     question: q.text,
     answer_text: mockTurns(sessionId).filter((t) => t.speaker === "candidate")[i]?.text ?? "",
-    score: [8, 7, 8, 5, 6][i],
+    score: [8, 7, 8, 5, 6][i] ?? 7,
     missing: [
       "A sharper line on why this company specifically, not just the role.",
       "The outcome for the business, not just the process you ran.",

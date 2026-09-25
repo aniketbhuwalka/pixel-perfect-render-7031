@@ -118,13 +118,13 @@ export function useInterviewSession(questions: ApiQuestion[] = []): UseInterview
       for (let i = startIndex; i < questions.length; i += 1) {
         if (cancelled.current) return;
         setCurrentQuestionIndex(i);
-        await speak("interviewer", questions[i].text);
+        await speak("interviewer", questions[i]?.text ?? "");
         if (cancelled.current) return;
         setStatus("thinking");
         await wait(900);
-        await speak("candidate", MOCK_ANSWERS[i % MOCK_ANSWERS.length]);
+        await speak("candidate", MOCK_ANSWERS[i % MOCK_ANSWERS.length] ?? "");
         if (i === 1 || i === 3) {
-          await speak("interviewer", FOLLOWUPS[i === 1 ? 0 : 1], true);
+          await speak("interviewer", FOLLOWUPS[i === 1 ? 0 : 1] ?? "", true);
           setStatus("thinking");
           await wait(700);
           await speak(
