@@ -1,5 +1,10 @@
+// Must be imported before "pdf-parse": on serverless hosts (Vercel) pdf.js can't find its
+// worker or DOMMatrix on its own, and failing at import time takes the whole API down.
+import { CanvasFactory, getData } from "pdf-parse/worker";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
+
+PDFParse.setWorker(getData());
 
 export type ResumeKind = "pdf" | "docx";
 
@@ -17,7 +22,7 @@ export async function extractText(buf: Buffer, kind: ResumeKind): Promise<string
 }
 
 async function extractPdf(buf: Buffer): Promise<string> {
-  const parser = new PDFParse({ data: new Uint8Array(buf) });
+  const parser = new PDFParse({ data: new Uint8Array(buf), CanvasFactory });
   try {
     return (await parser.getText()).text;
   } finally {
