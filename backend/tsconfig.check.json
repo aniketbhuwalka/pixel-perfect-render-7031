@@ -1,0 +1,9 @@
+{
+  // Used for local builds and type checks. Kept separate from tsconfig.json, which Vercel's
+  // Express build reads: naming "node" in `types` there fails that build (TS2688), while
+  // TypeScript 7 locally needs it named because it no longer includes @types by default.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  }
+}
