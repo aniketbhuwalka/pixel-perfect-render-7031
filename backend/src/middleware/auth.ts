@@ -2,6 +2,16 @@ import type { NextFunction, Request, Response } from "express";
 import { createRemoteJWKSet, decodeProtectedHeader, jwtVerify, type JWTPayload } from "jose";
 import { env } from "../lib/env.js";
 
+// Adds `req.auth`. Lives here rather than in a standalone .d.ts because Vercel type-checks
+// by following imports: every file that reads `req.auth` imports this module.
+declare global {
+  namespace Express {
+    interface Request {
+      auth?: { userId: string };
+    }
+  }
+}
+
 const hsSecret = env.SUPABASE_JWT_SECRET ? new TextEncoder().encode(env.SUPABASE_JWT_SECRET) : null;
 // Newer Supabase projects sign access tokens with asymmetric keys (ES256/RS256)
 // instead of the legacy HS256 JWT secret. Support both so either project type works.

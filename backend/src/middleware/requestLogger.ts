@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import type {} from "./auth.js"; // for the `req.auth` type
 
 /** One line per request: method, path, status, duration. Never logs bodies or headers. */
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
