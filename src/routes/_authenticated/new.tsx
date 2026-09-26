@@ -28,6 +28,8 @@ export const Route = createFileRoute("/_authenticated/new")({
 });
 
 const MAX_BYTES = 5 * 1024 * 1024;
+// Matches the API: shorter job descriptions don't give the question planner enough to work with.
+const MIN_JD_CHARS = 100;
 
 function NewSession() {
   const navigate = useNavigate();
@@ -68,7 +70,7 @@ function NewSession() {
   }
 
   async function handleStart() {
-    if (!resume || !roleTitle.trim() || jd.trim().length < 40) return;
+    if (!resume || !roleTitle.trim() || jd.trim().length < MIN_JD_CHARS) return;
     setStarting(true);
     try {
       const res = await api.createSession({
@@ -87,7 +89,8 @@ function NewSession() {
     }
   }
 
-  const canStart = !!resume && roleTitle.trim().length > 1 && jd.trim().length >= 40 && !starting;
+  const canStart =
+    !!resume && roleTitle.trim().length > 1 && jd.trim().length >= MIN_JD_CHARS && !starting;
 
   return (
     <main className="mx-auto max-w-3xl px-5 py-12">
@@ -137,7 +140,9 @@ function NewSession() {
               void handleFile(e.dataTransfer.files?.[0]);
             }}
             className={`mt-3 flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-10 text-center transition-colors ${
-              dragging ? "border-primary bg-accent/50" : "border-border bg-muted/30 hover:bg-muted/60"
+              dragging
+                ? "border-primary bg-accent/50"
+                : "border-border bg-muted/30 hover:bg-muted/60"
             }`}
           >
             <UploadCloud className="size-6 text-muted-foreground" />
@@ -169,7 +174,9 @@ function NewSession() {
             <Label htmlFor="jd">Job description</Label>
             <span className="text-xs text-muted-foreground">
               {jd.length.toLocaleString()} characters
-              {jd.length > 0 && jd.length < 40 ? " — a bit more, please" : ""}
+              {jd.trim().length > 0 && jd.trim().length < MIN_JD_CHARS
+                ? ` — at least ${MIN_JD_CHARS} needed`
+                : ""}
             </span>
           </div>
           <Textarea
@@ -185,22 +192,20 @@ function NewSession() {
       <section className="surface mt-5 p-6">
         <Label className="text-sm font-medium">Interview mode</Label>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          {(
-            [
-              {
-                value: "voice" as const,
-                icon: Mic,
-                title: "Voice",
-                body: "The interviewer speaks and listens. Closest to the real thing.",
-              },
-              {
-                value: "text" as const,
-                icon: Type,
-                title: "Text",
-                body: "Type your answers. Good for a quiet room or a shaky mic.",
-              },
-            ]
-          ).map((option) => (
+          {[
+            {
+              value: "voice" as const,
+              icon: Mic,
+              title: "Voice",
+              body: "The interviewer speaks and listens. Closest to the real thing.",
+            },
+            {
+              value: "text" as const,
+              icon: Type,
+              title: "Text",
+              body: "Type your answers. Good for a quiet room or a shaky mic.",
+            },
+          ].map((option) => (
             <button
               key={option.value}
               type="button"

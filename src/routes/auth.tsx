@@ -9,6 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 
+// Google sign-in goes through Lovable's hosted auth, which only works on the Lovable-hosted
+// Supabase project. Off unless VITE_ENABLE_GOOGLE_AUTH=true.
+const GOOGLE_AUTH_ENABLED = import.meta.env["VITE_ENABLE_GOOGLE_AUTH"] === "true";
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -102,21 +106,29 @@ function AuthPage() {
               : "Your resumes, sessions and reports stay with your account."}
           </p>
 
-          <Button
-            variant="outline"
-            className="mt-6 w-full"
-            disabled={busy}
-            onClick={handleGoogle}
-            type="button"
+          {GOOGLE_AUTH_ENABLED ? (
+            <>
+              <Button
+                variant="outline"
+                className="mt-6 w-full"
+                disabled={busy}
+                onClick={handleGoogle}
+                type="button"
+              >
+                Continue with Google
+              </Button>
+
+              <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" /> or{" "}
+                <span className="h-px flex-1 bg-border" />
+              </div>
+            </>
+          ) : null}
+
+          <form
+            onSubmit={handleSubmit}
+            className={`space-y-4 ${GOOGLE_AUTH_ENABLED ? "" : "mt-6"}`}
           >
-            Continue with Google
-          </Button>
-
-          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "signup" ? (
               <div className="space-y-2">
                 <Label htmlFor="name">Full name</Label>
@@ -163,9 +175,7 @@ function AuthPage() {
             className="mt-6 w-full text-sm text-muted-foreground underline-offset-4 hover:underline"
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           >
-            {mode === "signin"
-              ? "New here? Create an account"
-              : "Already have an account? Sign in"}
+            {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
           </button>
         </div>
       </main>

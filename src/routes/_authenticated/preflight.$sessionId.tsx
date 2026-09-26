@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Mic, MicOff, Loader2 } from "lucide-react";
+import { GapMapCard } from "@/components/GapMapCard";
+import { ResumeReadinessCard } from "@/components/ResumeReadinessCard";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -36,6 +40,12 @@ function Preflight() {
   const streamRef = useRef<MediaStream | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number | null>(null);
+  const { data } = useQuery({
+    queryKey: ["session", sessionId],
+    queryFn: () => api.getSession(sessionId),
+  });
+  const toTextMode = () =>
+    navigate({ to: "/interview/$sessionId", params: { sessionId }, search: { mode: "text" } });
 
   const stop = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -95,17 +105,12 @@ function Preflight() {
         </span>
         <h1 className="mt-6 text-2xl font-semibold">We can't hear your microphone</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Your browser blocked microphone access. You can allow it in the address bar and try again —
-          or do this interview by typing instead. Nothing is lost either way.
+          Your browser blocked microphone access. You can allow it in the address bar and try again
+          — or do this interview by typing instead. Nothing is lost either way.
         </p>
         <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button onClick={() => void requestMic()}>Try the microphone again</Button>
-          <Button
-            variant="outline"
-            onClick={() =>
-              navigate({ to: "/interview/$sessionId", params: { sessionId } })
-            }
-          >
+          <Button variant="outline" onClick={toTextMode}>
             Continue in text mode instead
           </Button>
         </div>
@@ -116,9 +121,7 @@ function Preflight() {
   return (
     <main className="mx-auto max-w-xl px-5 py-12">
       <h1 className="text-3xl font-semibold">Sound check</h1>
-      <p className="mt-2 text-muted-foreground">
-        One minute here saves a broken interview later.
-      </p>
+      <p className="mt-2 text-muted-foreground">One minute here saves a broken interview later.</p>
 
       <section className="surface mt-8 space-y-6 p-6">
         {permission !== "granted" ? (
@@ -206,11 +209,30 @@ function Preflight() {
         <button
           type="button"
           className="text-sm text-muted-foreground underline-offset-4 hover:underline"
-          onClick={() => navigate({ to: "/interview/$sessionId", params: { sessionId } })}
+          onClick={() => {
+            stop();
+            toTextMode();
+          }}
         >
           Skip and use text mode
         </button>
       </div>
+
+      {data?.session.gap_map.length ? (
+        <div className="mt-12">
+          <GapMapCard
+            gapMap={data.session.gap_map}
+            title="What your interviewer will probe"
+            description={`We compared your resume with the ${data.session.role_title} job description. Expect questions on anything marked missing.`}
+          />
+        </div>
+      ) : null}
+
+      {data?.session.resume_readiness ? (
+        <div className="mt-5">
+          <ResumeReadinessCard readiness={data.session.resume_readiness} />
+        </div>
+      ) : null}
     </main>
   );
 }

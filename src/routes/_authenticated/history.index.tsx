@@ -11,13 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { api } from "@/lib/api";
+import { api, type SessionSummary } from "@/lib/api";
 
 export const Route = createFileRoute("/_authenticated/history/")({
   head: () => ({
     meta: [
       { title: "Your interviews — PrepPilot" },
-      { name: "description", content: "Every practice interview you've sat, with scores over time." },
+      {
+        name: "description",
+        content: "Every practice interview you've sat, with scores over time.",
+      },
       { property: "og:title", content: "Your interviews — PrepPilot" },
       { property: "og:description", content: "Reopen any past session report and see your trend." },
     ],
@@ -26,13 +29,37 @@ export const Route = createFileRoute("/_authenticated/history/")({
 });
 
 const fmtDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "—";
+  iso
+    ? new Date(iso).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
 
-const fmtDuration = (s: number | null) => (s ? `${Math.round(s / 60)} min` : "—");
+const fmtDuration = (s: number | null) => (s ? `${Math.max(1, Math.round(s / 60))} min` : "—");
+
+function StatusBadge({ session }: { session: SessionSummary }) {
+  if (session.overall_score != null) return null;
+  const label =
+    session.status === "in_progress"
+      ? "Not finished"
+      : session.status === "abandoned"
+        ? "Abandoned"
+        : "No report";
+  return (
+    <span className="ml-2 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+      {label}
+    </span>
+  );
+}
 
 function History() {
   const navigate = useNavigate();
-  const { data, isLoading } = useQuery({ queryKey: ["sessions"], queryFn: api.listSessions });
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["sessions"],
+    queryFn: api.listSessions,
+  });
   const sessions = data?.sessions ?? [];
   const spark = [...sessions]
     .filter((s) => s.overall_score != null)
@@ -73,6 +100,16 @@ function History() {
             <Skeleton key={i} className="h-14 w-full rounded-xl" />
           ))}
         </div>
+      ) : error ? (
+        <div className="surface p-12 text-center">
+          <h2 className="text-lg font-semibold">We couldn't load your interviews</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "Something went wrong."}
+          </p>
+          <Button className="mt-6" onClick={() => void refetch()}>
+            Try again
+          </Button>
+        </div>
       ) : sessions.length === 0 ? (
         <div className="surface p-12 text-center">
           <h2 className="text-lg font-semibold">No interviews yet</h2>
@@ -105,7 +142,10 @@ function History() {
                     navigate({ to: "/history/$sessionId", params: { sessionId: s.id } })
                   }
                 >
-                  <TableCell className="font-medium">{s.role_title}</TableCell>
+                  <TableCell className="font-medium">
+                    {s.role_title}
+                    <StatusBadge session={s} />
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{fmtDate(s.started_at)}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{s.mode}</TableCell>
                   <TableCell className="text-muted-foreground">

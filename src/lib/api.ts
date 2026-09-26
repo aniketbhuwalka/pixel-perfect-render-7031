@@ -7,7 +7,9 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import {
+  mockGapMap,
   mockQuestions,
+  mockResumeReadiness,
   mockReport,
   mockSession,
   mockSessionHistory,
@@ -16,12 +18,15 @@ import {
 
 export type InterviewMode = "voice" | "text";
 
+export type QuestionType = "behavioural" | "role_specific" | "gap_targeted";
+export type Difficulty = "easy" | "medium" | "hard";
+
 export type ApiQuestion = {
   id: string;
   session_id: string;
   text: string;
-  type: string;
-  difficulty: string;
+  type: QuestionType;
+  difficulty: Difficulty;
   order_index: number;
   asked_at?: string | null;
 };
@@ -37,16 +42,45 @@ export type ApiTurn = {
   ended_at?: string | null;
 };
 
-export type GapMap = { covered: string[]; gaps: string[] };
+export type GapStatus = "strong" | "partial" | "missing";
+export type GapItem = { requirement: string; status: GapStatus; evidence: string };
+export type GapMap = GapItem[];
+
+export type SessionStatus = "in_progress" | "completed" | "abandoned";
+
+export type ReadinessDimension = { score: number; note: string };
+
+/** Hiring-manager first scan of the resume against this JD. */
+export type ResumeReadiness = {
+  score: number;
+  verdict: string;
+  dimensions: {
+    structure: ReadinessDimension;
+    clarity: ReadinessDimension;
+    measurable_outcomes: ReadinessDimension;
+    keyword_alignment: ReadinessDimension;
+  };
+  missing_keywords: string[];
+  fixes: {
+    /** rewrite = sharpen an existing line; add_if_true = only add if it's genuinely true */
+    kind: "rewrite" | "add_if_true";
+    where: string;
+    fix: string;
+    why: string;
+  }[];
+};
 
 export type ApiSession = {
   id: string;
+  resume_id: string | null;
   role_title: string;
   jd_text: string;
   mode: InterviewMode;
-  status: string;
+  status: SessionStatus;
   candidate_first_name: string | null;
   gap_map: GapMap;
+  /** null when the assessment couldn't be generated (or for sessions created before it existed) */
+  resume_readiness: ResumeReadiness | null;
   started_at: string | null;
   ended_at: string | null;
   duration_seconds: number | null;
@@ -57,7 +91,7 @@ export type PerQuestionFeedback = {
   question: string;
   answer_text: string;
   score: number;
-  missing: string;
+  what_was_missing: string[];
   model_answer: string;
 };
 
@@ -68,17 +102,21 @@ export type ApiReport = {
   verdict_line: string;
   what_worked: string[];
   what_didnt_work: string[];
-  strengths: string[];
-  weaknesses: string[];
+  strengths: { trait: string; evidence: string }[];
+  weaknesses: { pattern: string; fix: string }[];
   communication: {
-    clarity: number;
-    structure: number;
-    filler_words: number;
-    pace_wpm: number;
+    filler_word_count: number;
+    avg_words_per_answer: number;
+    /** null when the interview had no turn timings to measure pace from */
+    pace_wpm: number | null;
+    /** null on a reduced (scores-only) report */
+    used_star_structure: boolean | null;
   };
   jd_fit_summary: string;
   top_3_actions: string[];
   per_question: PerQuestionFeedback[];
+  /** true when the full debrief couldn't be generated and only scores are shown */
+  reduced: boolean;
   created_at: string;
 };
 
@@ -86,7 +124,7 @@ export type SessionSummary = {
   id: string;
   role_title: string;
   mode: InterviewMode;
-  status: string;
+  status: SessionStatus;
   started_at: string | null;
   duration_seconds: number | null;
   overall_score: number | null;
@@ -101,16 +139,51 @@ async function authHeaders(): Promise<Record<string, string>> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+/** Error from the API, carrying its status and machine-readable code (e.g. "realtime_unavailable"). */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
-      ...(await authHeaders()),
-      ...(init?.headers ?? {}),
-    },
-  });
-  if (!res.ok) throw new Error((await res.text()) || `Request failed (${res.status})`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+        ...(await authHeaders()),
+        ...(init?.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new ApiError(
+      "Can't reach the PrepPilot server. Check your connection and try again.",
+      0,
+      "network_error",
+    );
+  }
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as {
+      error?: string;
+      message?: string;
+      issues?: { path: string; message: string }[];
+    } | null;
+    const detail = body?.issues?.[0] ? ` (${body.issues[0].path}: ${body.issues[0].message})` : "";
+    // The login is no longer valid: sign out so the auth guard sends the user back to /auth.
+    if (res.status === 401) void supabase.auth.signOut();
+    throw new ApiError(
+      (body?.message ?? `Request failed (${res.status})`) + detail,
+      res.status,
+      body?.error ?? "unknown_error",
+    );
+  }
   return (await res.json()) as T;
 }
 
@@ -173,6 +246,7 @@ export const api = {
     session_id: string;
     candidate_first_name: string;
     gap_map: GapMap;
+    resume_readiness: ResumeReadiness | null;
     questions: ApiQuestion[];
   }> {
     if (API_URL) {
@@ -181,10 +255,7 @@ export const api = {
     await delay(1800);
     const session_id = `session-${Date.now()}`;
     const questions = mockQuestions(session_id);
-    const gap_map: GapMap = {
-      covered: ["Measurement design", "Stakeholder management", "Delivery ownership"],
-      gaps: ["Experimentation depth", "Warehouse modelling"],
-    };
+    const gap_map: GapMap = mockGapMap;
     const { data } = await supabase.auth.getUser();
     const candidate_first_name =
       (data.user?.user_metadata?.["full_name"] as string | undefined)?.split(" ")[0] ??
@@ -196,9 +267,11 @@ export const api = {
         role_title: input.role_title,
         jd_text: input.jd_text,
         mode: input.mode,
-        status: "created",
+        resume_id: input.resume_id,
+        status: "in_progress",
         candidate_first_name,
         gap_map,
+        resume_readiness: mockResumeReadiness,
         started_at: new Date().toISOString(),
         ended_at: null,
         duration_seconds: null,
@@ -206,7 +279,13 @@ export const api = {
       questions,
     };
     writeStore(store);
-    return { session_id, candidate_first_name, gap_map, questions };
+    return {
+      session_id,
+      candidate_first_name,
+      gap_map,
+      resume_readiness: mockResumeReadiness,
+      questions,
+    };
   },
 
   /** POST /api/realtime/token */
@@ -234,6 +313,9 @@ export const api = {
     speaker: "interviewer" | "candidate";
     text: string;
     is_followup: boolean;
+    /** ISO timestamps; let the report compute real speaking time and pace */
+    started_at?: string;
+    ended_at?: string;
   }): Promise<{ ok: boolean; turn_id: string }> {
     if (API_URL) {
       return request("/api/turns", { method: "POST", body: JSON.stringify(input) });
@@ -252,7 +334,7 @@ export const api = {
     const existing = store[session_id];
     if (existing) {
       existing.report = report;
-      existing.session.status = "complete";
+      existing.session.status = "completed";
       existing.session.ended_at = new Date().toISOString();
       existing.session.duration_seconds = existing.session.duration_seconds ?? 1_080;
       writeStore(store);

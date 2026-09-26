@@ -1,11 +1,98 @@
-import type { ApiSession, ApiQuestion, ApiTurn, ApiReport, SessionSummary } from "./api";
+import type {
+  ApiSession,
+  ApiQuestion,
+  ApiTurn,
+  ApiReport,
+  GapMap,
+  ResumeReadiness,
+  SessionSummary,
+} from "./api";
+
+export const mockResumeReadiness: ResumeReadiness = {
+  score: 63,
+  verdict:
+    "Strong analytics foundation with real numbers, but it reads like payments operations rather than an analyst who owns experimentation.",
+  dimensions: {
+    structure: {
+      score: 72,
+      note: "Roles and dates are easy to find, but the first scan is pulled toward billing rather than the measurement work this JD leads with.",
+    },
+    clarity: {
+      score: 78,
+      note: "Lines like “cut manual corrections by 70%” are concrete and short; “partnered with finance” is the vaguest bullet.",
+    },
+    measurable_outcomes: {
+      score: 58,
+      note: "Only “cut manual corrections by 70%” and “lifted repeat checkout conversion by 6%” carry numbers.",
+    },
+    keyword_alignment: {
+      score: 41,
+      note: "You match SQL and dashboards, but the JD's “A/B tests”, “north-star metrics” and “warehouse modelling” never appear.",
+    },
+  },
+  missing_keywords: [
+    "A/B tests",
+    "north-star metrics",
+    "experimentation",
+    "warehouse modelling",
+    "roadmap",
+  ],
+  fixes: [
+    {
+      kind: "rewrite",
+      where: "Built the checkout funnel dashboard in Looker, now used weekly by 4 product teams.",
+      fix: "Built a self-serve checkout funnel dashboard in Looker, used weekly by 4 product teams to cut ad-hoc data requests by [X%].",
+      why: "Borrows the JD's “self-serve dashboards” wording for work you already did.",
+    },
+    {
+      kind: "rewrite",
+      where: "Partnered with finance on the monthly close.",
+      fix: "Partnered with finance on the monthly close, delivering it [X days] faster.",
+      why: "Turns an activity into evidence of the stakeholder impact the JD asks for.",
+    },
+    {
+      kind: "add_if_true",
+      where: "Product Analyst, PayQuick (2022 - present)",
+      fix: "If the saved-cards launch was measured against a control group, say “A/B test” explicitly in that bullet.",
+      why: "Experimentation is the JD's first responsibility and nothing on the resume shows it yet.",
+    },
+  ],
+};
+
+export const mockGapMap: GapMap = [
+  {
+    requirement: "Measurement design",
+    status: "strong",
+    evidence: "“Built checkout funnel measurement”",
+  },
+  {
+    requirement: "Stakeholder management",
+    status: "strong",
+    evidence: "“Ran the weekly working group with finance”",
+  },
+  {
+    requirement: "Delivery ownership",
+    status: "partial",
+    evidence: "“Owned billing reconciliation migration”",
+  },
+  {
+    requirement: "Experimentation depth",
+    status: "missing",
+    evidence: "No A/B testing or experiment design on the resume",
+  },
+  {
+    requirement: "Warehouse modelling",
+    status: "missing",
+    evidence: "No dbt or warehouse modelling mentioned",
+  },
+];
 
 export const mockQuestions = (sessionId: string): ApiQuestion[] => [
   {
     id: `${sessionId}-q1`,
     session_id: sessionId,
     text: "Walk me through your background and what draws you to this role.",
-    type: "intro",
+    type: "behavioural",
     difficulty: "easy",
     order_index: 0,
   },
@@ -21,23 +108,23 @@ export const mockQuestions = (sessionId: string): ApiQuestion[] => [
     id: `${sessionId}-q3`,
     session_id: sessionId,
     text: "This role leans heavily on measuring impact. How have you decided what to track, and what did you do when the numbers disagreed with you?",
-    type: "role-fit",
-    difficulty: "hard",
+    type: "role_specific",
+    difficulty: "medium",
     order_index: 2,
   },
   {
     id: `${sessionId}-q4`,
     session_id: sessionId,
-    text: "Describe a disagreement with a stakeholder. How did you resolve it?",
-    type: "behavioural",
-    difficulty: "medium",
+    text: "Describe how you'd set up reporting for a brand-new product surface in your first month.",
+    type: "role_specific",
+    difficulty: "hard",
     order_index: 3,
   },
   {
     id: `${sessionId}-q5`,
     session_id: sessionId,
-    text: "Your resume mentions scaling a system under load. What broke first, and what would you do differently now?",
-    type: "technical",
+    text: "The role leans on experimentation. Walk me through how you'd design your first A/B test here.",
+    type: "gap_targeted",
     difficulty: "hard",
     order_index: 4,
   },
@@ -81,7 +168,8 @@ export const mockReport = (sessionId: string, overall = 74): ApiReport => ({
   id: `${sessionId}-report`,
   session_id: sessionId,
   overall_score: overall,
-  verdict_line: "Solid, credible answers — you lose points on structure and specifics, not on substance.",
+  verdict_line:
+    "Solid, credible answers — you lose points on structure and specifics, not on substance.",
   what_worked: [
     "You opened with a clear one-line summary of your background before going deeper.",
     "Concrete numbers on the reconciliation project (70% fewer manual corrections) made the impact believable.",
@@ -90,33 +178,49 @@ export const mockReport = (sessionId: string, overall = 74): ApiReport => ({
   ],
   what_didnt_work: [
     "Two answers ran past two minutes without a signposted structure.",
-    "You said \"we\" far more than \"I\" — the interviewer can't tell what you personally did.",
+    'You said "we" far more than "I" — the interviewer can\'t tell what you personally did.',
     "The stakeholder-disagreement answer ended without a result.",
     "You skipped the job description's emphasis on experimentation entirely.",
   ],
   strengths: [
-    "Decision-first thinking on metrics",
-    "Genuine ownership of delivery",
-    "Comfortable admitting and correcting a wrong hypothesis",
-    "Clear, unhurried delivery",
+    {
+      trait: "Decision-first thinking on metrics",
+      evidence: "“I start from the decision, not the metric.”",
+    },
+    {
+      trait: "Genuine ownership of delivery",
+      evidence: "“I personally rebuilt the matching logic.”",
+    },
+    {
+      trait: "Changes course on evidence",
+      evidence: "“I dropped my original hypothesis and reprioritised.”",
+    },
   ],
   weaknesses: [
-    "Answer structure under pressure",
-    "Under-claiming your own contribution",
-    "Weak closing on outcomes",
-    "Little reference to the role's core stack",
+    {
+      pattern: "Answers run long without structure",
+      fix: "Use situation → my decision → the number, capped at 90 seconds.",
+    },
+    {
+      pattern: "Under-claiming your own contribution",
+      fix: "Swap every “we” for “I” plus what the team did around you.",
+    },
+    {
+      pattern: "Endings without a result",
+      fix: "Close every story with what shipped and how it landed.",
+    },
   ],
   communication: {
-    clarity: 78,
-    structure: 62,
-    filler_words: 24,
+    filler_word_count: 24,
+    avg_words_per_answer: 118,
     pace_wpm: 158,
+    used_star_structure: false,
   },
   jd_fit_summary:
     "You map well to the analytics and ownership half of this job description: measurement design, stakeholder handling, and shipping under constraint all came through with real examples. The gap is the experimentation and platform half — the description leads on A/B testing and warehouse modelling, and neither appeared in your answers. On current evidence a hiring manager would read you as a strong analyst who needs to prove experimentation depth in a second round.",
   top_3_actions: [
     "Rehearse three stories in a fixed shape: situation, my decision, the number it moved. Cap each at 90 seconds.",
-    "Rewrite every \"we\" in your two best stories as \"I\" plus what the team did around you.",
+    'Rewrite every "we" in your two best stories as "I" plus what the team did around you.',
     "Prepare one experimentation story — hypothesis, design, guardrail metric, what you shipped — and use it on any measurement question.",
   ],
   per_question: mockQuestions(sessionId).map((q, i) => ({
@@ -124,21 +228,24 @@ export const mockReport = (sessionId: string, overall = 74): ApiReport => ({
     question: q.text,
     answer_text: mockTurns(sessionId).filter((t) => t.speaker === "candidate")[i]?.text ?? "",
     score: [8, 7, 8, 5, 6][i] ?? 7,
-    missing: [
-      "A sharper line on why this company specifically, not just the role.",
-      "The outcome for the business, not just the process you ran.",
-      "A guardrail metric, and what you chose not to optimise.",
-      "The result. You described the negotiation but never said what shipped or how it landed.",
-      "What you monitored afterwards to prove the fix held.",
-    ][i] ?? "",
-    model_answer: [
-      "Anchor in one line: 'Four years in product analytics, last two owning payments reporting.' Then one proof point with a number, then one sentence connecting your strongest skill to this team's stated priority.",
-      "Situation in one sentence, then 'I decided…' twice, then the number. Close with what you'd hand to the next owner.",
-      "Name the decision the metric served, the guardrail you refused to break, and the moment the data overruled you — then the concrete reprioritisation and its result.",
-      "Use the tension, your move, the agreement, and the result: 'We shipped the read-only view in five days, the full dashboard a sprint later, and it became the team's weekly review surface.'",
-      "Name the failure mode precisely, the fix, the new load profile it survived, and the monitoring you added so it couldn't regress silently.",
-    ][i] ?? "",
+    what_was_missing:
+      [
+        ["A sharper line on why this company specifically, not just the role."],
+        ["The outcome for the business, not just the process you ran."],
+        ["A guardrail metric, and what you chose not to optimise."],
+        ["The result — what shipped and how it landed."],
+        ["A sample-size estimate", "A guardrail metric"],
+      ][i] ?? [],
+    model_answer:
+      [
+        "Anchor in one line: 'Four years in product analytics, last two owning payments reporting.' Then one proof point with a number, then one sentence connecting your strongest skill to this team's stated priority.",
+        "Situation in one sentence, then 'I decided…' twice, then the number. Close with what you'd hand to the next owner.",
+        "Name the decision the metric served, the guardrail you refused to break, and the moment the data overruled you — then the concrete reprioritisation and its result.",
+        "Use the tension, your move, the agreement, and the result: 'We shipped the read-only view in five days, the full dashboard a sprint later, and it became the team's weekly review surface.'",
+        "Name the failure mode precisely, the fix, the new load profile it survived, and the monitoring you added so it couldn't regress silently.",
+      ][i] ?? "",
   })),
+  reduced: false,
   created_at: new Date().toISOString(),
 });
 
@@ -147,7 +254,7 @@ export const mockSessionHistory: SessionSummary[] = [
     id: "demo-session-3",
     role_title: "Senior Product Analyst — Fintech",
     mode: "voice",
-    status: "complete",
+    status: "completed",
     started_at: "2026-09-18T10:02:00Z",
     duration_seconds: 1_140,
     overall_score: 74,
@@ -156,7 +263,7 @@ export const mockSessionHistory: SessionSummary[] = [
     id: "demo-session-2",
     role_title: "Product Analyst — Marketplace",
     mode: "voice",
-    status: "complete",
+    status: "completed",
     started_at: "2026-09-11T17:20:00Z",
     duration_seconds: 960,
     overall_score: 68,
@@ -165,7 +272,7 @@ export const mockSessionHistory: SessionSummary[] = [
     id: "demo-session-1",
     role_title: "Data Analyst — Payments",
     mode: "text",
-    status: "complete",
+    status: "completed",
     started_at: "2026-09-02T08:45:00Z",
     duration_seconds: 720,
     overall_score: 59,
@@ -178,12 +285,11 @@ export const mockSession = (id: string, overrides: Partial<ApiSession> = {}): Ap
   jd_text:
     "We're looking for a senior product analyst to own measurement across our payments surface: experiment design, warehouse modelling, and partnering with product on roadmap decisions.",
   mode: "voice",
-  status: "complete",
+  status: "completed",
   candidate_first_name: "Aniket",
-  gap_map: {
-    covered: ["Measurement design", "Stakeholder management", "Delivery ownership"],
-    gaps: ["Experimentation depth", "Warehouse modelling"],
-  },
+  resume_id: null,
+  gap_map: mockGapMap,
+  resume_readiness: mockResumeReadiness,
   started_at: "2026-09-18T10:02:00Z",
   ended_at: "2026-09-18T10:21:00Z",
   duration_seconds: 1_140,
