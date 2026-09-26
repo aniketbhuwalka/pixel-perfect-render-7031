@@ -1,7 +1,7 @@
-import { createApp } from "./app.js";
+import app from "./app.js";
 import { env } from "./lib/env.js";
 
-const server = createApp().listen(env.PORT, () => {
+const server = app.listen(env.PORT, () => {
   console.log(`PrepPilot API listening on port ${env.PORT} (${env.NODE_ENV})`);
 });
 

@@ -12,7 +12,7 @@ import { turnsRouter } from "./routes/turns.js";
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", 1); // behind Railway's proxy
+  app.set("trust proxy", 1); // behind Vercel's proxy
 
   app.use(requestLogger);
   app.use(
@@ -35,3 +35,9 @@ export function createApp() {
   app.use(errorHandler);
   return app;
 }
+
+// Vercel's Express support looks for src/app.ts before src/index.ts and runs its default
+// export as the function, so the app itself must be exported here. Locally, src/index.ts
+// imports it and starts a server.
+const app = createApp();
+export default app;
